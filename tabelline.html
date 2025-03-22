@@ -97,6 +97,13 @@ Utilizzo di pixel art.
         color: #555;
       }
 
+      #operationDisplay {
+        font-size: 2.5rem;
+        margin: 1rem 0;
+        color: #333;
+        font-weight: bold;
+      }
+
       #risposta {
         padding: 0.75rem;
         font-size: 1rem;
@@ -181,7 +188,9 @@ Utilizzo di pixel art.
         margin-bottom: 1rem;
         gap: 5px;
         flex-wrap: wrap;
-        min-height: 50px;
+        min-height: 100px;
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
       }
 
       .blocchetto {
@@ -292,11 +301,31 @@ Utilizzo di pixel art.
       #punteggioValue {
         padding: 0.5rem 1rem;
         font-size: 1rem;
-        border: 2px solid #4caf50;
+        border: 2px solid #f6b93b;
+        background-color: #fef9e7;
         border-radius: 8px;
         margin-left: 1rem;
         width: 50px;
         text-align: center;
+        font-weight: bold;
+        color: #d35400;
+        transition: all 0.3s ease;
+      }
+
+      .points-added {
+        animation: pointsAdded 0.6s ease;
+      }
+
+      @keyframes pointsAdded {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.2);
+        }
+        100% {
+          transform: scale(1);
+        }
       }
 
       #stats {
@@ -452,22 +481,26 @@ Utilizzo di pixel art.
       }
 
       .life {
-        font-size: 24px;
-        color: #e74c3c;
+        width: 25px;
+        height: 25px;
+        background-color: #e74c3c;
+        border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+        transform: rotate(45deg);
+        position: relative;
         display: inline-block;
         transition: opacity 0.3s ease;
-        animation: pulse 3s ease-in-out infinite;
+        animation: pulse 1.5s ease-in-out infinite;
       }
 
       @keyframes pulse {
         0% {
-          transform: scale(1);
+          transform: rotate(45deg) scale(1);
         }
         50% {
-          transform: scale(1.05);
+          transform: rotate(45deg) scale(1.1);
         }
         100% {
-          transform: scale(1);
+          transform: rotate(45deg) scale(1);
         }
       }
 
@@ -517,6 +550,10 @@ Utilizzo di pixel art.
           <label id="livelloLabel">Livello:</label>
           <span id="livello">1</span>
         </div>
+        <div id="punteggio">
+          <label id="punteggioLabel">Punti:</label>
+          <span id="punteggioValue">0</span>
+        </div>
       </div>
       <button
         id="playButton"
@@ -537,6 +574,7 @@ Utilizzo di pixel art.
       <div id="gameArea" style="display: none">
         <div id="domanda"></div>
         <div id="blocchettiContainer"></div>
+        <div id="operationDisplay"></div>
         <input
           type="number"
           id="risposta"
@@ -548,9 +586,9 @@ Utilizzo di pixel art.
         <button id="verifica">Verifica Risposta</button>
         <div id="messaggio"></div>
         <div id="livesContainer">
-          <div class="life" id="life1">❤</div>
-          <div class="life" id="life2">❤</div>
-          <div class="life" id="life3">❤</div>
+          <div class="life" id="life1"></div>
+          <div class="life" id="life2"></div>
+          <div class="life" id="life3"></div>
         </div>
         <button id="commuta">Commuta</button>
         <button id="reset">Reset</button>
@@ -590,6 +628,7 @@ Utilizzo di pixel art.
     <script>
       let num1, num2, risultato;
       let lives = 3;
+      let points = 0;
       const colori = [
         "rosso",
         "arancione",
@@ -615,8 +654,11 @@ Utilizzo di pixel art.
       let widthBarra = 100;
       let userInteracted = false;
       let autocommuteTimerId;
-      let autocommuteActive = false;
+      let autocommuteActive = false; // Inizialmente disattivato
       let autocommutaInterval = 8000; // Intervallo di autocommuta in ms (8 secondi)
+      let columnAppearDelay = 1000; // Tempo in ms per l'apparizione di ogni colonna (configurabile)
+      let rowAppearDelay = 1000; // Tempo in ms per l'apparizione di ogni riga (configurabile)
+      let rowAnimationTimerId;
 
       const gameOverScreen = document.getElementById("gameOver");
       const rispostaInput = document.getElementById("risposta");
@@ -634,6 +676,11 @@ Utilizzo di pixel art.
         document.getElementById("life2"),
         document.getElementById("life3"),
       ];
+      const blocchettiContainer = document.getElementById(
+        "blocchettiContainer"
+      );
+      const operationDisplay = document.getElementById("operationDisplay");
+      const punteggioValue = document.getElementById("punteggioValue");
 
       // Funzione per riprodurre l'audio
       function playAudio(audioId) {
@@ -714,13 +761,19 @@ Utilizzo di pixel art.
         num1 = Math.floor(Math.random() * maxVal) + 1;
         num2 = Math.floor(Math.random() * maxVal) + 1;
         risultato = num1 * num2;
-        document.getElementById(
-          "domanda"
-        ).textContent = `Quanto fa ${num1} x ${num2}?`;
+        document.getElementById("domanda").textContent = "";
+        operationDisplay.textContent = `${num1} × ${num2}`;
         rispostaInput.value = "";
         rispostaInput.focus();
         document.getElementById("messaggio").textContent = "";
+
+        // Nascondi inizialmente i blocchetti
+        blocchettiContainer.style.opacity = "0";
         generaBlocchetti(num1, num2);
+
+        // Mostra i blocchetti riga per riga
+        showRowByRow(num1, num2);
+
         if (musicaAttiva) {
           const musica = document.getElementById("musicaDiSottofondo");
           musica.currentTime = 0;
@@ -736,6 +789,41 @@ Utilizzo di pixel art.
           tempoBarra.style.display = "none";
           clearInterval(timerId);
         }
+      }
+
+      // Funzione per mostrare blocchetti riga per riga
+      function showRowByRow(n1, n2) {
+        // Cancella timer esistenti
+        if (rowAnimationTimerId) {
+          clearInterval(rowAnimationTimerId);
+        }
+
+        // Nascondi tutte le righe inizialmente
+        const blocchetti = document.querySelectorAll(".blocchetto");
+        blocchetti.forEach((b) => (b.style.opacity = "0"));
+
+        // Mostra il contenitore
+        blocchettiContainer.style.opacity = "1";
+
+        let currentRow = 0;
+
+        rowAnimationTimerId = setInterval(() => {
+          if (currentRow >= n2) {
+            clearInterval(rowAnimationTimerId);
+            return;
+          }
+
+          // Mostra tutti i blocchetti nella riga corrente
+          for (let j = 0; j < n1; j++) {
+            const blockIndex = currentRow * n1 + j;
+            if (blocchetti[blockIndex]) {
+              blocchetti[blockIndex].style.opacity = "1";
+              blocchetti[blockIndex].style.transition = "opacity 0.3s ease";
+            }
+          }
+
+          currentRow++;
+        }, rowAppearDelay);
       }
 
       // Funzione per generare i blocchetti
@@ -760,6 +848,7 @@ Utilizzo di pixel art.
           for (let j = 0; j < n1; j++) {
             const blocchetto = document.createElement("div");
             blocchetto.className = `blocchetto ${colore1}`;
+            blocchetto.style.opacity = "0"; // Inizialmente invisibili
             container.appendChild(blocchetto);
           }
         }
@@ -809,6 +898,37 @@ Utilizzo di pixel art.
         }
       }
 
+      // Funzione per mostrare il risultato (Si/No) e avviare la nuova domanda
+      function showResultAndProceed(isCorrect) {
+        // Nascondi domanda e blocchetti
+        blocchettiContainer.style.opacity = "0";
+        operationDisplay.style.opacity = "0";
+        document.getElementById("messaggio").style.fontSize = "3rem";
+        document.getElementById("messaggio").style.transition = "all 0.5s ease";
+
+        // Mostra Si o No
+        if (isCorrect) {
+          document.getElementById("messaggio").textContent = "Sì";
+          document.getElementById("messaggio").style.color = "green";
+        } else {
+          document.getElementById("messaggio").textContent = "No";
+          document.getElementById("messaggio").style.color = "red";
+        }
+
+        // Dopo 1 secondo, nascondi il risultato e mostra la nuova domanda
+        setTimeout(() => {
+          document.getElementById("messaggio").style.opacity = "0";
+
+          // Dopo che il messaggio è scomparso, cambia domanda e mostra tutto
+          setTimeout(() => {
+            document.getElementById("messaggio").style.fontSize = "1.2rem";
+            document.getElementById("messaggio").style.opacity = "1";
+            operationDisplay.style.opacity = "1";
+            generaDomanda();
+          }, 500);
+        }, 1000);
+      }
+
       // Funzione per verificare la risposta
       function verificaRisposta() {
         if (sfidaAttiva && tempoRimanente <= 0) {
@@ -823,18 +943,42 @@ Utilizzo di pixel art.
         // Disabilita temporaneamente l'input
         disableInputTemporarily();
 
+        // Ferma l'animazione delle righe
+        if (rowAnimationTimerId) {
+          clearInterval(rowAnimationTimerId);
+        }
+
         if (rispostaUtente === risultato) {
-          document.getElementById("messaggio").textContent = "Corretto! Bravo!";
-          document.getElementById("messaggio").style.color = "green";
+          // Controlla se tutte le righe sono visibili
+          const blocchetti = document.querySelectorAll(".blocchetto");
+          const visibleBlocks = Array.from(blocchetti).filter(
+            (b) => b.style.opacity === "1"
+          ).length;
+          const totalBlocks = blocchetti.length;
+
+          // Calcola quante righe sono state mostrate (approssimazione)
+          const visibleRows = Math.ceil(visibleBlocks / (totalBlocks / num2));
+
+          // Più punti se ha risposto prima che tutti i blocchetti siano visibili
+          const pointsEarned = visibleRows < num2 ? 5 : 3;
+          points += pointsEarned;
+          punteggioValue.textContent = points;
+
+          // Animazione per i punti aggiunti
+          punteggioValue.classList.add("points-added");
+          setTimeout(() => {
+            punteggioValue.classList.remove("points-added");
+          }, 600);
+
+          // Mostra Sì e procedi
+          showResultAndProceed(true);
           playAudio("audioCorretto");
         } else {
           lives -= 1; // Rimuove una vita invece di punti
           updateLives(); // Aggiorna la visualizzazione delle vite
 
-          document.getElementById(
-            "messaggio"
-          ).textContent = `Spiacente, la risposta è sbagliata. La risposta corretta è ${risultato}.`;
-          document.getElementById("messaggio").style.color = "red";
+          // Mostra No e procedi
+          showResultAndProceed(false);
           playAudio("audioSbagliato");
         }
 
@@ -852,21 +996,13 @@ Utilizzo di pixel art.
           if (livello < maxLivello) {
             livello++;
             document.getElementById("livello").textContent = livello;
-            document.getElementById(
-              "messaggio"
-            ).textContent = `Passato al livello ${livello}!`;
-            document.getElementById("messaggio").style.color = "blue";
           } else {
-            document.getElementById("messaggio").textContent =
-              "Hai vinto il gioco!";
-            document.getElementById("messaggio").style.color = "purple";
             resetGame();
           }
         }
 
         verificaButton.textContent = "Prossima Domanda";
         clearInterval(timerId);
-        setTimeout(generaDomanda, 1500);
       }
 
       // Funzione per commutare gli operandi
@@ -876,10 +1012,18 @@ Utilizzo di pixel art.
         let temp = num1;
         num1 = num2;
         num2 = temp;
-        generaBlocchetti(num1, num2);
-        document.getElementById(
-          "domanda"
-        ).textContent = `Quanto fa ${num1} x ${num2}?`;
+
+        // Aggiorna la visualizzazione
+        operationDisplay.textContent = `${num1} × ${num2}`;
+
+        // Nascondi blocchetti esistenti
+        blocchettiContainer.style.opacity = "0";
+
+        // Rigenera i blocchetti e mostrali riga per riga
+        setTimeout(() => {
+          generaBlocchetti(num1, num2);
+          showRowByRow(num1, num2);
+        }, 300);
 
         // Non resettare l'input quando è una autocommuta
         if (
@@ -889,13 +1033,13 @@ Utilizzo di pixel art.
           rispostaInput.value = "";
           rispostaInput.focus();
         }
-
-        document.getElementById("messaggio").textContent = "";
       }
 
       // Funzione per resettare il gioco
       function resetGame() {
         lives = 3; // Reset vite a 3
+        points = 0; // Reset punti a 0
+        punteggioValue.textContent = points; // Aggiorna visualizzazione punti
         updateLives(); // Aggiorna visualizzazione vite
         livello = 1;
         domandeFatte = 0;
@@ -906,11 +1050,14 @@ Utilizzo di pixel art.
         verificaButton.textContent = "Verifica Risposta";
         gameOverScreen.style.display = "none";
 
-        // Avvia l'autocommuta
-        startAutocommute();
+        // Non avviare l'autocommuta automaticamente
+        // startAutocommute();
 
         clearInterval(intervalloCommutazione);
         clearInterval(timerId);
+        if (rowAnimationTimerId) {
+          clearInterval(rowAnimationTimerId);
+        }
         generaDomanda();
       }
 
@@ -996,7 +1143,8 @@ Utilizzo di pixel art.
         playButton.style.display = "none";
         resetGame();
         updateLives(); // Ensure lives are displayed correctly at start
-        startAutocommute(); // Avvia l'autocommuta
+        // Non avviare l'autocommuta all'inizio
+        // startAutocommute(); // Avvia l'autocommuta
       });
 
       // Attiva la possibilità di rispondere con Enter
