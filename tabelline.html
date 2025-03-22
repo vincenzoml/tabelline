@@ -1001,7 +1001,7 @@ Utilizzo di pixel art.
 
       // Funzione per gestire l'input dell'utente
       function handleUserInput(key) {
-        if (isProcessingAnswer) return;
+        if (isProcessingAnswer) return; // Blocca completamente l'input se stiamo processando una risposta
 
         // Se l'input è un numero da 0 a 9
         if (/^[0-9]$/.test(key)) {
@@ -1009,6 +1009,16 @@ Utilizzo di pixel art.
           if (currentInputValue.length < 2) {
             currentInputValue += key;
             updateCustomInput();
+
+            // Auto-verifica la risposta se corretta e blocca immediatamente l'input
+            const currentAnswer = parseInt(currentInputValue);
+            if (!isNaN(currentAnswer) && currentAnswer === risultato) {
+              isProcessingAnswer = true; // Blocca l'input immediatamente
+              // Piccolo ritardo per feedback visivo
+              setTimeout(() => {
+                verificaRisposta();
+              }, 300);
+            }
           }
         }
         // Se l'input è Backspace
@@ -1018,15 +1028,8 @@ Utilizzo di pixel art.
         }
         // Se l'input è Enter o Space
         else if (key === "Enter" || key === " ") {
+          isProcessingAnswer = true; // Blocca l'input immediatamente
           verificaRisposta();
-        }
-
-        // Auto-verifica la risposta se corretta
-        if (parseInt(currentInputValue) === risultato) {
-          // Piccolo ritardo per feedback visivo
-          setTimeout(() => {
-            verificaRisposta();
-          }, 300);
         }
       }
 
@@ -1122,6 +1125,9 @@ Utilizzo di pixel art.
 
       // Funzione per mostrare il risultato (Si/No) e avviare la nuova domanda
       function showResultAndProceed(isCorrect, phraseToSpeak) {
+        // Assicurati che l'input rimanga bloccato durante tutto il processo
+        isProcessingAnswer = true;
+
         // Nascondi domanda e blocchetti
         blocchettiContainer.style.opacity = "0";
         operationDisplay.style.opacity = "0";
@@ -1164,28 +1170,31 @@ Utilizzo di pixel art.
           document.getElementById("messaggio").style.opacity = "1";
           operationDisplay.style.opacity = "1";
           generaDomanda();
+          isProcessingAnswer = false; // Riattiva l'input solo dopo che è stata generata una nuova domanda
         }, 500);
       }
 
       // Funzione per verificare la risposta
       function verificaRisposta() {
-        if ((sfidaAttiva && tempoRimanente <= 0) || isProcessingAnswer) {
+        // Blocca immediatamente ogni altro input
+        isProcessingAnswer = true;
+
+        if (sfidaAttiva && tempoRimanente <= 0) {
+          isProcessingAnswer = false; // Riattiva l'input solo in questo caso speciale
           return;
         }
 
         const rispostaUtente = parseInt(currentInputValue);
 
-        // Se la risposta è vuota, non fare nulla
+        // Se la risposta è vuota, non fare nulla ma riattiva l'input
         if (isNaN(rispostaUtente)) {
+          isProcessingAnswer = false;
           return;
         }
 
         // Pulisci immediatamente il campo di input
         currentInputValue = "";
         updateCustomInput();
-
-        // Disabilita temporaneamente l'input
-        disableInputTemporarily();
 
         // Ferma l'animazione delle righe
         if (rowAnimationTimerId) {
@@ -1345,8 +1354,38 @@ Utilizzo di pixel art.
 
           if (tempoRimanente <= 0) {
             clearInterval(timerId);
-            document.getElementById("messaggio").textContent = "Tempo scaduto!";
-            verificaRisposta();
+
+            // Tratta il timeout come un errore, rimuovendo una vita
+            lives -= 1;
+            updateLives();
+
+            // Seleziona una frase di errore a caso
+            const randomIndex = Math.floor(Math.random() * phrasesWrong.length);
+            const phraseToSpeak = phrasesWrong[randomIndex];
+
+            // Mostra No e procedi con la frase
+            showResultAndProceed(false, phraseToSpeak);
+            playAudio("audioSbagliato");
+
+            // Controlla game over
+            if (lives <= 0) {
+              handleGameOver();
+              return;
+            }
+
+            // Incrementa il contatore delle domande
+            domandeFatte++;
+
+            // Controllo passaggio di livello
+            if (domandeFatte >= domandePerLivello * livello) {
+              domandeFatte = 0;
+              if (livello < maxLivello) {
+                livello++;
+                document.getElementById("livello").textContent = livello;
+              } else {
+                resetGame();
+              }
+            }
           }
         }, 1000);
       }
