@@ -106,8 +106,8 @@ Utilizzo di pixel art.
 
       #risposta {
         padding: 0.75rem;
-        font-size: 1rem;
-        border: 2px solid #4caf50;
+        font-size: 1.5rem;
+        border: 3px solid #4caf50;
         border-radius: 8px;
         margin-bottom: 1rem;
         width: 80%;
@@ -115,16 +115,85 @@ Utilizzo di pixel art.
         margin-left: auto;
         margin-right: auto;
         display: block;
-        transition: opacity 0.3s ease, background-color 0.3s ease;
+        text-align: center;
+        font-weight: bold;
+        transition: opacity 0.3s ease, background-color 0.3s ease,
+          border-color 0.3s ease;
       }
       #risposta:focus {
         outline: none;
-        box-shadow: 0 0 5px rgba(76, 175, 80, 0.7);
+        box-shadow: 0 0 8px rgba(76, 175, 80, 0.7);
+        border-color: #45a049;
       }
       #risposta.disabled {
         opacity: 0.5;
         background-color: #f0f0f0;
         pointer-events: none;
+      }
+
+      #customInput {
+        width: 80%;
+        max-width: 150px;
+        height: 60px;
+        margin: 1rem auto;
+        background-color: white;
+        border: 3px solid #4caf50;
+        border-radius: 8px;
+        font-size: 2rem;
+        font-weight: bold;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      #customInput:hover {
+        box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+      }
+
+      #customInput.correct {
+        border-color: #45a049;
+        background-color: #ebfaeb;
+        animation: correctAnswer 0.5s ease;
+      }
+
+      #customInput.incorrect {
+        border-color: #e74c3c;
+        background-color: #fdedeb;
+        animation: incorrectAnswer 0.5s ease;
+      }
+
+      @keyframes correctAnswer {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.1);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      @keyframes incorrectAnswer {
+        0% {
+          transform: translateX(0);
+        }
+        25% {
+          transform: translateX(-10px);
+        }
+        50% {
+          transform: translateX(10px);
+        }
+        75% {
+          transform: translateX(-10px);
+        }
+        100% {
+          transform: translateX(0);
+        }
       }
 
       #verifica {
@@ -575,11 +644,7 @@ Utilizzo di pixel art.
         <div id="domanda"></div>
         <div id="blocchettiContainer"></div>
         <div id="operationDisplay"></div>
-        <input
-          type="number"
-          id="risposta"
-          placeholder="Inserisci la risposta"
-        />
+        <div id="customInput"></div>
         <div id="tempoBarra">
           <div id="tempoBarraInterna"></div>
         </div>
@@ -659,6 +724,9 @@ Utilizzo di pixel art.
       let columnAppearDelay = 1000; // Tempo in ms per l'apparizione di ogni colonna (configurabile)
       let rowAppearDelay = 1000; // Tempo in ms per l'apparizione di ogni riga (configurabile)
       let rowAnimationTimerId;
+      let currentInputValue = "";
+      let customInputFocused = true;
+      let isProcessingAnswer = false;
 
       // Frasi di incoraggiamento per risposte corrette
       const phrasesFast = [
@@ -723,6 +791,7 @@ Utilizzo di pixel art.
       );
       const operationDisplay = document.getElementById("operationDisplay");
       const punteggioValue = document.getElementById("punteggioValue");
+      const customInput = document.getElementById("customInput");
 
       // Funzione per riprodurre l'audio
       function playAudio(audioId) {
@@ -833,8 +902,12 @@ Utilizzo di pixel art.
         risultato = num1 * num2;
         document.getElementById("domanda").textContent = "";
         operationDisplay.textContent = `${num1} × ${num2}`;
-        rispostaInput.value = "";
-        rispostaInput.focus();
+
+        // Reset custom input
+        currentInputValue = "";
+        updateCustomInput();
+        refocusCustomInput();
+
         document.getElementById("messaggio").textContent = "";
 
         // Nascondi inizialmente i blocchetti
@@ -926,15 +999,92 @@ Utilizzo di pixel art.
         }
       }
 
+      // Funzione per gestire l'input dell'utente
+      function handleUserInput(key) {
+        if (isProcessingAnswer) return;
+
+        // Se l'input è un numero da 0 a 9
+        if (/^[0-9]$/.test(key)) {
+          // Limita a 2 cifre
+          if (currentInputValue.length < 2) {
+            currentInputValue += key;
+            updateCustomInput();
+          }
+        }
+        // Se l'input è Backspace
+        else if (key === "Backspace") {
+          currentInputValue = currentInputValue.slice(0, -1);
+          updateCustomInput();
+        }
+        // Se l'input è Enter o Space
+        else if (key === "Enter" || key === " ") {
+          verificaRisposta();
+        }
+
+        // Auto-verifica la risposta se corretta
+        if (parseInt(currentInputValue) === risultato) {
+          // Piccolo ritardo per feedback visivo
+          setTimeout(() => {
+            verificaRisposta();
+          }, 300);
+        }
+      }
+
+      // Funzione per aggiornare il custom input
+      function updateCustomInput() {
+        customInput.textContent = currentInputValue;
+      }
+
+      // Funzione per ripristinare il focus sul custom input
+      function refocusCustomInput() {
+        customInputFocused = true;
+        customInput.style.borderColor = "#4caf50";
+      }
+
+      // Aggiungiamo gli event listener per la tastiera su tutto il documento
+      document.addEventListener("keydown", function (event) {
+        if (!customInputFocused) return;
+
+        startMusicaWithInteraction();
+
+        // Gestisci solo i tasti numerici, backspace, enter e spazio
+        if (
+          /^[0-9]$/.test(event.key) ||
+          event.key === "Backspace" ||
+          event.key === "Enter" ||
+          event.key === " "
+        ) {
+          event.preventDefault();
+          handleUserInput(event.key);
+        }
+      });
+
+      // Aggiungi event listener al click sul custom input
+      customInput.addEventListener("click", function () {
+        refocusCustomInput();
+      });
+
+      // Aggiungi event listener per il focus sul documento
+      document.addEventListener("click", function (event) {
+        if (event.target !== customInput) {
+          // Manteniamo il focus logico ma mostriamo che è in background
+          customInputFocused = true;
+          customInput.style.borderColor = "#4caf50";
+        }
+      });
+
       // Funzione per disabilitare e fadeare l'input temporaneamente
       function disableInputTemporarily() {
-        rispostaInput.classList.add("disabled");
-        rispostaInput.disabled = true;
+        customInputFocused = false;
+        isProcessingAnswer = true;
+        customInput.style.opacity = "0.5";
+        customInput.style.backgroundColor = "#f0f0f0";
 
         setTimeout(() => {
-          rispostaInput.classList.remove("disabled");
-          rispostaInput.disabled = false;
-          rispostaInput.focus();
+          customInputFocused = true;
+          isProcessingAnswer = false;
+          customInput.style.opacity = "1";
+          customInput.style.backgroundColor = "white";
         }, 1000);
       }
 
@@ -1019,14 +1169,20 @@ Utilizzo di pixel art.
 
       // Funzione per verificare la risposta
       function verificaRisposta() {
-        if (sfidaAttiva && tempoRimanente <= 0) {
+        if ((sfidaAttiva && tempoRimanente <= 0) || isProcessingAnswer) {
           return;
         }
 
-        const rispostaUtente = parseInt(rispostaInput.value);
+        const rispostaUtente = parseInt(currentInputValue);
+
+        // Se la risposta è vuota, non fare nulla
+        if (isNaN(rispostaUtente)) {
+          return;
+        }
 
         // Pulisci immediatamente il campo di input
-        rispostaInput.value = "";
+        currentInputValue = "";
+        updateCustomInput();
 
         // Disabilita temporaneamente l'input
         disableInputTemporarily();
@@ -1037,6 +1193,12 @@ Utilizzo di pixel art.
         }
 
         if (rispostaUtente === risultato) {
+          // Effetto visivo per risposta corretta
+          customInput.classList.add("correct");
+          setTimeout(() => {
+            customInput.classList.remove("correct");
+          }, 500);
+
           // Controlla se tutte le righe sono visibili
           const blocchetti = document.querySelectorAll(".blocchetto");
           const visibleBlocks = Array.from(blocchetti).filter(
@@ -1067,6 +1229,12 @@ Utilizzo di pixel art.
           showResultAndProceed(true, phraseToSpeak);
           playAudio("audioCorretto");
         } else {
+          // Effetto visivo per risposta sbagliata
+          customInput.classList.add("incorrect");
+          setTimeout(() => {
+            customInput.classList.remove("incorrect");
+          }, 500);
+
           lives -= 1; // Rimuove una vita invece di punti
           updateLives(); // Aggiorna la visualizzazione delle vite
 
@@ -1125,13 +1293,11 @@ Utilizzo di pixel art.
           showRowByRow(num1, num2);
         }, 300);
 
-        // Non resettare l'input quando è una autocommuta
-        if (
-          !autocommuteActive ||
-          (autocommuteActive && document.activeElement !== rispostaInput)
-        ) {
-          rispostaInput.value = "";
-          rispostaInput.focus();
+        // Reset custom input
+        if (!autocommuteActive) {
+          currentInputValue = "";
+          updateCustomInput();
+          refocusCustomInput();
         }
       }
 
@@ -1242,17 +1408,14 @@ Utilizzo di pixel art.
         playButton.style.display = "none";
         resetGame();
         updateLives(); // Ensure lives are displayed correctly at start
+
+        // Focus custom input
+        setTimeout(() => {
+          refocusCustomInput();
+        }, 500);
+
         // Non avviare l'autocommuta all'inizio
         // startAutocommute(); // Avvia l'autocommuta
-      });
-
-      // Attiva la possibilità di rispondere con Enter
-      rispostaInput.addEventListener("keypress", function (event) {
-        if (event.key === "Enter") {
-          startMusicaWithInteraction();
-          event.preventDefault();
-          verificaRisposta();
-        }
       });
 
       // Modifica il gameOver per resettare dopo 2 secondi
