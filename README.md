@@ -9,54 +9,73 @@ An interactive game to help children learn multiplication tables with colorful v
 ## Features
 
 - Interactive multiplication questions appropriate to player level
-- Visual representation of multiplication using colorful blocks
-- Progressive difficulty levels
-- Point-based scoring system
+- Visual representation of multiplication using colorful blocks that appear row by row
+- Progressive difficulty levels (1-10)
+- Lives system (3 hearts) instead of points
 - Sound effects for correct and incorrect answers
-- Background music
-- Time challenge mode
-- Ability to swap operands to understand commutative property
-- Responsive design
+- Voice feedback with encouraging phrases in Italian
+- Background music (starts only after user interaction)
+- Time challenge mode with countdown timer
+- Auto-commute feature that automatically swaps operands every 8 seconds
+- Visual feedback for answers (green flash for correct, shake animation for incorrect)
 - Game over and level advancement mechanics
-- Retro pixel art styling
+- Automatic game reset 2 seconds after game over
+- Retro pixel art styling with "Press Start 2P" font
+- Responsive design for different screen sizes
 
-## Game Requirements
+## Game Mechanics
 
-- Present multiplication questions (num1 × num2)
-- Display colored blocks to visually represent the multiplication
-- Allow user to input answers
-- Verify answers and provide feedback
-- Update score based on performance
-- Advance to next level after correct answers
-- Include optional timed challenge
-- Allow switching operands
-- Reset functionality
-- Sound effects for correct/incorrect answers
-- Background music
-- Responsive and attractive design
-- Pixel art aesthetic
+### Lives System
+- Players start with 3 lives (displayed as hearts)
+- Incorrect answers or timeouts result in losing one life
+- Game ends when all lives are lost
+
+### Scoring and Levels
+- Each level requires more correct answers to advance (level × domandePerLivello)
+- Maximum level is 10
+- Difficulty increases with each level (larger numbers in multiplication)
+- Players receive verbal encouragement for correct answers
+- Fast answers (before all rows appear) receive special praise
+
+### Auto-commute Feature
+- Every 8 seconds, the operands automatically swap (e.g., 3×4 becomes 4×3)
+- The commute button flashes when auto-commute is active
+- Manual commutation resets the auto-commute timer
+- Auto-commute is disabled during timed challenges
+
+### Time Challenge
+- Optional timer that counts down from 15 seconds
+- Losing a life when time expires
+- Visual progress bar showing remaining time
+
+## User Interaction Features
+
+- Custom input field with improved focus management
+- Input locking after answering to prevent accidental double submissions
+- Visual fade effect when input is temporarily disabled
+- Automatic verification when correct answer is typed
+- Input field clears immediately after answer submission
+- Game only starts when player clicks "Play" button
+- Game resets automatically 2 seconds after game over
 
 ## Implementation Notes
 
-### Game Mechanics
-- Players start with 5 points
-- Correct answers award 5 points
-- Incorrect answers deduct 3 points
-- Game ends when points reach 0
-- Each level requires more correct answers to advance
-- Maximum level is 10
-- Difficulty increases with each level (larger numbers)
+### Visual Representation
+- Multiplication shown as a grid of colored blocks
+- Blocks appear row by row to visualize multiplication as repeated addition
+- Color of blocks based on the first operand
 
-### User Interaction Requirements
-- Game only begins when the player clicks "Play"
-- Sound only starts after user interaction (browser requirement)
-- Game automatically resets 2 seconds after game over
-- Responsive to different screen sizes
+### User Experience Improvements
+- Input field temporarily disables with fade effect after answer submission
+- Answer verification triggers automatically when correct answer is typed
+- Focus maintained on input field throughout gameplay
+- Clear visual and audio feedback for all interactions
 
-### Technical Notes
+### Technical Details
 - Built with HTML, CSS, and vanilla JavaScript
 - No external libraries needed
 - Uses CSS animations and transitions for visual feedback
+- Uses Web Speech API for voice narration
 - Uses HTML5 audio for sound effects and music
 - Grid-based visualization of multiplication
 - Uses modern ES6 JavaScript features
@@ -82,9 +101,10 @@ The game uses 8-bit style sound effects for a retro arcade feel:
 
 The game works on all modern browsers that support:
 - ES6 JavaScript
-- CSS Grid
+- CSS Grid and modern animations
 - HTML5 Audio
-- CSS Animations
+- Web Speech API
+- CSS Variables
 
 ## License
 

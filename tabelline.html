@@ -1079,15 +1079,14 @@ Utilizzo di pixel art.
       // Funzione per disabilitare e fadeare l'input temporaneamente
       function disableInputTemporarily() {
         customInputFocused = false;
-        isProcessingAnswer = true;
         customInput.style.opacity = "0.5";
         customInput.style.backgroundColor = "#f0f0f0";
 
         setTimeout(() => {
           customInputFocused = true;
-          isProcessingAnswer = false;
           customInput.style.opacity = "1";
           customInput.style.backgroundColor = "white";
+          // Non riattivare isProcessingAnswer qui, sarà gestito dalla funzione procedeToNextQuestion
         }, 1000);
       }
 
@@ -1195,6 +1194,9 @@ Utilizzo di pixel art.
         // Pulisci immediatamente il campo di input
         currentInputValue = "";
         updateCustomInput();
+
+        // Disabilita temporaneamente l'input visivamente
+        disableInputTemporarily();
 
         // Ferma l'animazione delle righe
         if (rowAnimationTimerId) {
@@ -1354,6 +1356,7 @@ Utilizzo di pixel art.
 
           if (tempoRimanente <= 0) {
             clearInterval(timerId);
+            isProcessingAnswer = true; // Blocca l'input quando il tempo scade
 
             // Tratta il timeout come un errore, rimuovendo una vita
             lives -= 1;
@@ -1361,7 +1364,7 @@ Utilizzo di pixel art.
 
             // Seleziona una frase di errore a caso
             const randomIndex = Math.floor(Math.random() * phrasesWrong.length);
-            const phraseToSpeak = phrasesWrong[randomIndex];
+            const phraseToSpeak = `Tempo scaduto! ${phrasesWrong[randomIndex]}`;
 
             // Mostra No e procedi con la frase
             showResultAndProceed(false, phraseToSpeak);
