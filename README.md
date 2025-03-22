@@ -15,7 +15,7 @@ An interactive game to help children learn multiplication tables with colorful v
 - Sound effects for correct and incorrect answers
 - Voice feedback with encouraging phrases in Italian
 - Background music (starts only after user interaction)
-- Time challenge mode with countdown timer
+- Time challenge mode with 15-second countdown timer
 - Auto-commute feature that automatically swaps operands every 8 seconds
 - Visual feedback for answers (green flash for correct, shake animation for incorrect)
 - Game over and level advancement mechanics
@@ -41,11 +41,11 @@ An interactive game to help children learn multiplication tables with colorful v
 - Every 8 seconds, the operands automatically swap (e.g., 3×4 becomes 4×3)
 - The commute button flashes when auto-commute is active
 - Manual commutation resets the auto-commute timer
-- Auto-commute is disabled during timed challenges
+- Auto-commute is disabled during gameplay as time challenge is always active
 
 ### Time Challenge
-- Optional timer that counts down from 15 seconds
-- Losing a life when time expires
+- Always-on timer that counts down from 15 seconds per question
+- Losing a life when time expires with "Tempo scaduto!" (Time's up!) feedback
 - Visual progress bar showing remaining time
 
 ## User Interaction Features
@@ -86,9 +86,8 @@ An interactive game to help children learn multiplication tables with colorful v
 2. Answer the multiplication questions by typing the result in the input field
 3. Click "Verify Answer" or press Enter to submit
 4. Try to advance through all the levels
-5. Toggle the timed challenge option for an extra challenge
-6. Use the "Commuta" button to swap the order of numbers
-7. Game automatically resets after Game Over
+5. Use the "Commuta" button to swap the order of numbers if needed
+6. Game automatically resets after Game Over
 
 ## Audio Credits
 
