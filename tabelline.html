@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+
+<!--
+Gioco interattivo per imparare le tabelline.
+
+Presenta una domanda di moltiplicazione (num1 x num2).
+
+Visualizza blocchetti colorati per rappresentare la moltiplicazione.
+
+Permette all'utente di inserire la risposta.
+
+Verifica la risposta e fornisce un feedback (corretto/sbagliato).
+
+Aggiorna il punteggio in base alla risposta data.
+
+Passa al livello successivo dopo un certo numero di domande corrette.
+
+Include una sfida a tempo opzionale.
+
+Permette di commutare gli operandi della moltiplicazione.
+
+Permette di resettare il gioco.
+
+Effetti sonori per risposte corrette e sbagliate.
+
+Musica di sottofondo.
+
+Design reattivo e accattivante.
+
+Utilizzo di pixel art.
+-->
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Impara le Tabelline Giocando</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Press Start 2P", cursive;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background-color: #f0f0f0;
+        margin: 0;
+        background-image: url("tabelline_sfondo.jpg"); /* Sostituisci con l'URL della tua immagine */
+        background-size: cover;
+        animation: fadeInBackground 2s ease forwards;
+      }
+      @keyframes fadeInBackground {
+        from {
+          background-color: rgba(240, 240, 240, 0);
+        }
+        to {
+          background-color: #f0f0f0;
+        }
+      }
+
+      .container {
+        background-color: rgba(255, 255, 255, 0.8);
+        padding: 15px;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        max-width: 80%;
+        animation: fadeIn 1.5s ease forwards;
+        opacity: 0;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      h1 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        color: #333;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+      }
+      @media (max-width: 400px) {
+        h1 {
+          font-size: 1.2rem;
+        }
+      }
+
+      #domanda {
+        font-size: 1.2rem;
+        margin-bottom: 1.5rem;
+        color: #555;
+      }
+
+      #risposta {
+        padding: 0.75rem;
+        font-size: 1rem;
+        border: 2px solid #4caf50;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        width: 80%;
+        max-width: 300px;
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
+        transition: opacity 0.3s ease, background-color 0.3s ease;
+      }
+      #risposta:focus {
+        outline: none;
+        box-shadow: 0 0 5px rgba(76, 175, 80, 0.7);
+      }
+      #risposta.disabled {
+        opacity: 0.5;
+        background-color: #f0f0f0;
+        pointer-events: none;
+      }
+
+      #verifica {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        margin-bottom: 0.5rem;
+        animation: fadeInButton 1s ease forwards;
+        opacity: 0;
+        animation-delay: 0.5s;
+      }
+      @keyframes fadeInButton {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      #verifica:hover {
+        background-color: #45a049;
+      }
+
+      #messaggio {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        min-height: 30px; /* Assicura che l'area del messaggio abbia un'altezza minima */
+      }
+
+      #giocaAncora {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        background-color: #008cba;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        margin-top: 1rem;
+        display: none; /* Nascondi il pulsante all'inizio */
+        animation: fadeInButton 1s ease forwards;
+        opacity: 0;
+        animation-delay: 0.5s;
+      }
+
+      #giocaAncora:hover {
+        background-color: #007ba7;
+      }
+
+      #blocchettiContainer {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+        gap: 5px;
+        flex-wrap: wrap;
+        min-height: 50px;
+      }
+
+      .blocchetto {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        margin: 2px;
+        display: inline-block;
+      }
+
+      .rosso {
+        background-color: #e53e3e;
+      }
+      .arancione {
+        background-color: #f59e0b;
+      }
+      .giallo {
+        background-color: #f6e05e;
+      }
+      .verde {
+        background-color: #38a169;
+      }
+      .azzurro {
+        background-color: #3182ce;
+      }
+      .blu {
+        background-color: #4a5568;
+      }
+      .viola {
+        background-color: #805ad5;
+      }
+      .rosa {
+        background-color: #d53f8c;
+      }
+      .bianco {
+        background-color: #ffffff;
+      }
+      .grigio {
+        background-color: #a0aec0;
+      }
+
+      #commuta {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        background-color: #8e44ad;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        margin-top: 0.5rem;
+        animation: fadeInButton 1s ease forwards;
+        opacity: 0;
+        animation-delay: 0.5s;
+      }
+
+      #commuta:hover {
+        background-color: #7a378b;
+      }
+
+      #commuta.flash {
+        animation: buttonFlash 1.5s infinite;
+      }
+
+      @keyframes buttonFlash {
+        0% {
+          background-color: #8e44ad;
+        }
+        50% {
+          background-color: #a157c4;
+        }
+        100% {
+          background-color: #8e44ad;
+        }
+      }
+
+      #livelloContainer {
+        margin-bottom: 0.5rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      #livello {
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+        border: 2px solid #4caf50;
+        border-radius: 8px;
+        margin-left: 1rem;
+        width: 50px;
+        text-align: center;
+      }
+
+      #livelloLabel {
+        font-size: 1rem;
+        color: #333;
+        margin-left: 0;
+      }
+
+      #punteggio {
+        font-size: 1rem;
+        margin-left: 2rem;
+        color: #333;
+        display: flex;
+        align-items: center;
+      }
+
+      #punteggioValue {
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+        border: 2px solid #4caf50;
+        border-radius: 8px;
+        margin-left: 1rem;
+        width: 50px;
+        text-align: center;
+      }
+
+      #stats {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 0.5rem;
+      }
+
+      #reset {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        background-color: #e74c3c;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        margin-top: 1rem;
+        animation: fadeInButton 1s ease forwards;
+        opacity: 0;
+        animation-delay: 0.5s;
+      }
+
+      #reset:hover {
+        background-color: #c0392b;
+      }
+
+      #gameOver {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 10;
+      }
+
+      #gameOver h2 {
+        font-size: 2rem;
+        color: white;
+        margin-bottom: 1rem;
+      }
+
+      #gameOverSadFace {
+        font-size: 5rem;
+        color: #ff6b6b;
+        margin-bottom: 1rem;
+      }
+
+      .pixelart {
+        image-rendering: pixelated;
+        -webkit-interpolation-mode: nearest-neighbor;
+        interpolation-mode: nearest-neighbor;
+      }
+
+      #sfidaSwitch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+      }
+
+      #sfidaSwitch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        -webkit-transition: 0.4s;
+        transition: 0.4s;
+        border-radius: 34px;
+      }
+
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        -webkit-transition: 0.4s;
+        transition: 0.4s;
+        border-radius: 50%;
+      }
+
+      input:checked + .slider {
+        background-color: #2196f3;
+      }
+
+      input:focus + .slider {
+        box-shadow: 0 0 1px #2196f3;
+      }
+
+      input:checked + .slider:before {
+        -webkit-transform: translateX(26px);
+        -ms-transform: translateX(26px);
+        transform: translateX(26px);
+      }
+
+      /* Rounded sliders */
+      .slider.round {
+        border-radius: 34px;
+      }
+
+      .slider.round:before {
+        border-radius: 50%;
+      }
+
+      #sfidaLabel {
+        font-size: 1rem;
+        color: #333;
+        margin-left: 1rem;
+      }
+
+      #tempoBarra {
+        width: 80%;
+        height: 10px;
+        background-color: #ddd;
+        border-radius: 5px;
+        margin: 1rem auto;
+        overflow: hidden;
+        display: none;
+      }
+
+      #tempoBarraInterna {
+        height: 10px;
+        background-color: #f44336;
+        border-radius: 5px;
+        width: 100%;
+        transition: width 0.3s linear;
+      }
+
+      #livesContainer {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0.5rem 0;
+        gap: 10px;
+      }
+
+      .life {
+        font-size: 24px;
+        color: #e74c3c;
+        display: inline-block;
+        transition: opacity 0.3s ease;
+        animation: pulse 3s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .life-lost {
+        opacity: 0.2;
+        animation: none;
+      }
+
+      @media (max-width: 400px) {
+        .container {
+          padding: 15px;
+        }
+        #verifica,
+        #giocaAncora,
+        #commuta,
+        #reset {
+          padding: 0.5rem 1rem;
+          font-size: 0.9rem;
+        }
+        #domanda {
+          font-size: 1rem;
+        }
+        #messaggio {
+          font-size: 1rem;
+        }
+        .blocchetto {
+          width: 16px;
+          height: 16px;
+        }
+        h1 {
+          font-size: 1.2rem;
+        }
+        #gameOver h2 {
+          font-size: 1.5rem;
+        }
+        #gameOverSadFace {
+          font-size: 3rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Impara le Tabelline!</h1>
+      <div id="stats">
+        <div id="livelloContainer">
+          <label id="livelloLabel">Livello:</label>
+          <span id="livello">1</span>
+        </div>
+      </div>
+      <button
+        id="playButton"
+        style="
+          padding: 0.75rem 1.5rem;
+          font-size: 1rem;
+          background-color: #4caf50;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: background-color 0.3s ease;
+          margin: 0.5rem 0;
+        "
+      >
+        Gioca
+      </button>
+      <div id="gameArea" style="display: none">
+        <div id="domanda"></div>
+        <div id="blocchettiContainer"></div>
+        <input
+          type="number"
+          id="risposta"
+          placeholder="Inserisci la risposta"
+        />
+        <div id="tempoBarra">
+          <div id="tempoBarraInterna"></div>
+        </div>
+        <button id="verifica">Verifica Risposta</button>
+        <div id="messaggio"></div>
+        <div id="livesContainer">
+          <div class="life" id="life1">❤</div>
+          <div class="life" id="life2">❤</div>
+          <div class="life" id="life3">❤</div>
+        </div>
+        <button id="commuta">Commuta</button>
+        <button id="reset">Reset</button>
+        <div style="display: flex; align-items: center; margin-top: 1rem">
+          <label id="sfidaLabel">Sfida a tempo</label>
+          <label id="sfidaSwitch" class="switch">
+            <input type="checkbox" id="sfidaAttiva" />
+            <span class="slider round"></span>
+          </label>
+        </div>
+      </div>
+      <div id="gameOver">
+        <h2>Game Over</h2>
+        <div id="gameOverSadFace" class="pixelart">:(</div>
+        <button id="giocaAncora">Gioca Ancora</button>
+      </div>
+      <audio id="audioCorretto">
+        <source
+          src="data:audio/wav;base64,UklGRhADAABXQVZFZm10IBAAAAABAAEARKwAAESsAAABAAgAZGF0YewCAACAg4OGhIOBfn56d3Rwb3FxdHd9f4OHkpmgpqmvsbGvq6WblYuCeHBrZmVnbHJ8hpGbpq63vcDCwr+6sq+mnpeNgnhvZ2JgYGNqc4CKk6CptL7CxsjIxsO+uLOsp56Vh3tvZGBcW1xhaHJ9iZagrbvEzNLW19XRy8S8s6qhmYuAc2piXVpYWl9odIGSpK+8ydPb4OTk4dzVzMO5rqOVi39zaWFbVlRXXGRxfoqbqrrHztbc4OLg3NXNw7qvpJeMf3RrYlxXVFVZYW11g5SjsL7L0trf4uHe2NDHvrWqnpCDdmxlXVlVVVdda3B8jJuosb7J0djd39/c1c/Gvrama5WIfXFoYVxYVlhfaHB7ipaiqbW+xMvQ1NbW0czFvbOqno+EdW5oYFxYWFpfZ296hZGboKezucDFycvLyMTAtK2mnJCGfXNsZWBdW1xfZGtzeISQmKCorrS5v8LFx8fEwLu0rqeek4mAeHBqZWJgYGNoa3B0eX+Fio+UmJ2hpamsrq+ur62sqaWhnZmUj4qFgX56d3RzcXBwcHJ0dnp+goaLkJWZnaGlqKqsrayqqKajoJ2ZlZCMiISBfnx6eHZ1dHR0dXd5fH+Dh4uPk5ebnaCipKWmpqWkoqCem5eUkI2Jh4SBf317enh3d3d4eXt9gIKGiY2Qk5aZnJ6goqOjoqKgnpyamJaTkY6LiYaEgoB/fXx7e3t7fH1+gIKEhomLjpGTlZeZm5ydnp6enZybmpiWlJKQjoyKiIaEg4GAfn59fX19fn+AgoSGiIqMj5GTlJaYmZqbnJycm5qZmJeVlJKQj42LiomHhYSCgYCAfn5+fn5/gIGChIaIioyOkJKTlZaXmJmZmpmZmJeWlZSSkZCOjYuKiYeGhYSCgYGAgICAgIGChIWGiImLjI6PkZKTlJWWlpaWlpaVlJOSkZCPjo2MioqIh4aFhIOCgYGAgICAgYGChISFhoiJiouNjo+QkZKTk5STk5OSkZGQj4+OjYyLiomIh4aFhIODgYGAgICAgYGChISFhoiJiouMjY2Oj4+Pj4+Pj4+OjY2Mi4uKiYiIh4aGhYWEg4OCgoKCgYGCgoKDg4SFhYaHiIiJiouMjI2NjY6Ojo6OjY2NjIyLioqJiYiHh4aGhYWEhIODg4KCgoKCgoODg4SFhYaGh4iIiYqKi4yMjI2NjY2NjYyMjIuLioqJiYiIh4eGhoWFhISDg4OCgoICgoKDg4OEhISFhYaHh4iJiYqKi4uLjIyMjIyMi4uLioqKiYmIiIeHhoaGhYWEhIODg4ODg4ODg4OEhISFhYaGh4eIiImJioqLi4uLi4uLi4uKioqJiYiIiIeHh4aGhYWFhISDg4ODg4ODg4OEhISEhYWGhoaHiIiIiYmKioqKioqKioqKiYmJiIiIh4eHhoaGhYWFhISEg4ODg4MDAwMDAwMDAwMD"
+          type="audio/wav"
+        />
+      </audio>
+      <audio id="audioSbagliato">
+        <source
+          src="data:audio/wav;base64,UklGRhgDAABXQVZFZm10IBAAAAABAAEARKwAAESsAAABAAgAZGF0YfQCAAA0QFMtMu0eTBktUj5WJCwTWDgfNEVADhIHIDUdGDMlIv4bCzkhFg8zM1QZEAIoHyoKMS8jLAcSIQ02JgMrSS4qE0c9FiIeHRgWED8xDhkwMSsjPjYlK0clGUFDMxU+UUkiKzNACx00JQoaISIZQCZRIColPwg0G0EoNSc1IjdAJSU5LA8wKCkzJzFPGzovPBEsGEsfGhUXQDgXPz8nDTo+QyUSMBBFKTExNRkpOjEnTigoO0s1NzArJis5VR0eITUjLCI5AwYxHUM3Lw4nQEQ1OTIgPC85JTcYOUcgHzAlOh4YKCUzPBUxPDwhKCBBMgwjJBkOLj43Hkc1TSQiEjYxNygvHxYqOCJHMiwWNjATRyYhJDAzLRYuIxcfRBYhMxwxNyo2JC4aLBNDIzofOiI6GDMpHjkyPRkYQz01HCo3HCwiQTFIHDwmKRsnJCIoJy8/JR04GzpFHRscES8bOh5CPholJDw2KyFPPyE0IBkwJR4sNTEiEjdEOyciMDciER8jHy0kKxo9H0YgKxlBNxI1KiY3OQspNiswJTwSLksaIj8TRRsqODEtKx8/NSNALxJILh1ALSw9FiwoPiMfMB8iNSURRT47IkQbIUAcOjsmPEQPMx8/GxgmRR8jJjsoNDAgOS9EPiwlKSMkMSYjKiM2LSA5NzIaJ0c3KEIaGi4tPzIgMiouQD86IE4cMjw5HCMYJRsqKSMxQh8IMh02PzQcM0EuIUAaHCYuIx0iPzY2LB8hOwQiNTw5Lw4sKyUQGhoiLi5DGyozLCQbPC8dGxw6OjozNis3MSE1PzwpKS0wPSsoHyw5LyYIIjtDIh0sMy8gRDQVJSQ6DzdAJh0iJisoKjQlJjMQLEYxGClDMygkKDctNyMpKyVENBsoLzlDMRYiPCcjJD0ZMy8sKCc1KyA4MjYeRyUeNio3OD0VNisuHDYRKSk7PyoOOB04Mx4lPycsLjErKj1FMRAlPDIQHRw4ND0pFyggRDQkHRwvLSQmNzwzKCgiQjoZLxwzHiE3PicnPzAtKDkvMRguMSwgHRsqKD4qNiY3PSsuGDI5MTsqKyElHDQ4PCEcOSsrKys8OzYZMyE8KCI4PCcqHzomKzk9QTQhJBwnKiIfLSglJi9AKTAVMTIkIx0wJCk/KyM2MzwjKxEmJD0sKRc6NDkuPyYXKTIkJTMqLDcrOyohLkI6OzAVJyUoLisfGyg9Jx4vOTAoKiw9Ix4iMUApNyggMi4qIj80My4fLDw2FAkrLCQ5KDgwIyMZMi0bMDIeKSI9NisdMzUgJSkaJCw+HCsvOzotJiYwLCVBM0I0HR4/KjoxOSwhHiIkNTYtJzsgKDkxPCUiGUA="
+          type="audio/wav"
+        />
+      </audio>
+      <audio id="musicaDiSottofondo" loop>
+        <source
+          src="https://opengameart.org/sites/default/files/8_bit_arpeggio.wav"
+          type="audio/wav"
+        />
+      </audio>
+    </div>
+
+    <script>
+      let num1, num2, risultato;
+      let lives = 3;
+      const colori = [
+        "rosso",
+        "arancione",
+        "giallo",
+        "verde",
+        "azzurro",
+        "blu",
+        "viola",
+        "rosa",
+        "bianco",
+        "grigio",
+      ];
+      let isCommutata = false;
+      let musicaAttiva = false;
+      let livello = 1;
+      let maxLivello = 10;
+      let domandeFatte = 0;
+      let domandePerLivello = 2; // Numero di domande per livello
+      let intervalloCommutazione;
+      let sfidaAttiva = false;
+      let timerId;
+      let tempoRimanente = 15;
+      let widthBarra = 100;
+      let userInteracted = false;
+      let autocommuteTimerId;
+      let autocommuteActive = false;
+      let autocommutaInterval = 8000; // Intervallo di autocommuta in ms (8 secondi)
+
+      const gameOverScreen = document.getElementById("gameOver");
+      const rispostaInput = document.getElementById("risposta");
+      const verificaButton = document.getElementById("verifica");
+      const giocaAncoraButton = document.getElementById("giocaAncora");
+      const resetButton = document.getElementById("reset");
+      const commutaButton = document.getElementById("commuta");
+      const sfidaSwitch = document.getElementById("sfidaAttiva");
+      const tempoBarra = document.getElementById("tempoBarra");
+      const tempoBarraInterna = document.getElementById("tempoBarraInterna");
+      const gameArea = document.getElementById("gameArea");
+      const playButton = document.getElementById("playButton");
+      const lifeElements = [
+        document.getElementById("life1"),
+        document.getElementById("life2"),
+        document.getElementById("life3"),
+      ];
+
+      // Funzione per riprodurre l'audio
+      function playAudio(audioId) {
+        if (!userInteracted) return; // Non riprodurre audio se l'utente non ha ancora interagito
+
+        const audio = document.getElementById(audioId);
+        if (audio) {
+          audio.currentTime = 0; // Rewind to the beginning
+          audio.volume = 0.5; // Set volume to 50%
+
+          const playPromise = audio.play();
+          if (playPromise !== undefined) {
+            playPromise.catch((error) => {
+              console.error(
+                "Errore durante la riproduzione dell'audio:",
+                error
+              );
+            });
+          }
+        }
+      }
+
+      // Funzione per avviare/fermare la musica di sottofondo
+      function toggleMusica() {
+        const musica = document.getElementById("musicaDiSottofondo");
+        if (musica && userInteracted) {
+          if (musicaAttiva) {
+            musica.pause();
+            musicaAttiva = false;
+          } else {
+            musica.volume = 0.5; // Abbassa il volume
+            musica.play().catch((error) => {
+              console.error(
+                "Errore durante la riproduzione della musica:",
+                error
+              );
+            });
+            musicaAttiva = true;
+          }
+        }
+      }
+
+      // Funzione per avviare la musica alla prima interazione
+      function startMusicaWithInteraction() {
+        if (!userInteracted) {
+          userInteracted = true;
+          const musica = document.getElementById("musicaDiSottofondo");
+          console.log("Starting music, element exists:", !!musica);
+          if (musica) {
+            // Ripristina la posizione iniziale
+            musica.currentTime = 0;
+            // Imposta un volume moderato
+            musica.volume = 0.4;
+
+            // Prova a riprodurre la musica
+            const playPromise = musica.play();
+
+            if (playPromise !== undefined) {
+              playPromise
+                .then(() => {
+                  console.log("Music started successfully");
+                  musicaAttiva = true;
+                })
+                .catch((error) => {
+                  console.error(
+                    "Errore durante la riproduzione della musica:",
+                    error
+                  );
+                });
+            }
+          }
+        }
+      }
+
+      // Funzione per generare una domanda
+      function generaDomanda() {
+        const maxVal = Math.min(livello + 1, 10); // I numeri vanno da 1 a livello+1, max 10
+        num1 = Math.floor(Math.random() * maxVal) + 1;
+        num2 = Math.floor(Math.random() * maxVal) + 1;
+        risultato = num1 * num2;
+        document.getElementById(
+          "domanda"
+        ).textContent = `Quanto fa ${num1} x ${num2}?`;
+        rispostaInput.value = "";
+        rispostaInput.focus();
+        document.getElementById("messaggio").textContent = "";
+        generaBlocchetti(num1, num2);
+        if (musicaAttiva) {
+          const musica = document.getElementById("musicaDiSottofondo");
+          musica.currentTime = 0;
+          musica.play();
+        }
+        if (sfidaAttiva) {
+          tempoBarra.style.display = "block";
+          tempoRimanente = 15;
+          widthBarra = 100;
+          tempoBarraInterna.style.width = `${widthBarra}%`;
+          startTimer();
+        } else {
+          tempoBarra.style.display = "none";
+          clearInterval(timerId);
+        }
+      }
+
+      // Funzione per generare i blocchetti
+      function generaBlocchetti(n1, n2) {
+        const container = document.getElementById("blocchettiContainer");
+        container.innerHTML = "";
+        const colore1 = colori[(n1 - 1) % colori.length];
+        const blocchettoWidth = 20;
+        const blocchettoHeight = 20;
+
+        // Definisci lo stile per il contenitore per visualizzare i blocchetti come una griglia
+        container.style.display = "grid";
+        container.style.gridTemplateColumns = `repeat(${n1}, ${
+          blocchettoWidth + 4
+        }px)`; // Crea n1 colonne
+        container.style.gridTemplateRows = `repeat(${n2}, ${
+          blocchettoHeight + 4
+        }px)`; // Crea n2 righe
+        container.style.gap = "2px"; // Spazio tra i blocchetti
+
+        for (let i = 0; i < n2; i++) {
+          for (let j = 0; j < n1; j++) {
+            const blocchetto = document.createElement("div");
+            blocchetto.className = `blocchetto ${colore1}`;
+            container.appendChild(blocchetto);
+          }
+        }
+      }
+
+      // Funzione per disabilitare e fadeare l'input temporaneamente
+      function disableInputTemporarily() {
+        rispostaInput.classList.add("disabled");
+        rispostaInput.disabled = true;
+
+        setTimeout(() => {
+          rispostaInput.classList.remove("disabled");
+          rispostaInput.disabled = false;
+          rispostaInput.focus();
+        }, 1000);
+      }
+
+      // Funzione per avviare l'autocommuta
+      function startAutocommute() {
+        if (autocommuteTimerId) {
+          stopAutocommute();
+        }
+
+        autocommuteActive = true;
+        commutaButton.classList.add("flash");
+
+        autocommuteTimerId = setInterval(() => {
+          commutaOperandi();
+        }, autocommutaInterval);
+      }
+
+      // Funzione per fermare l'autocommuta
+      function stopAutocommute() {
+        clearInterval(autocommuteTimerId);
+        autocommuteActive = false;
+        commutaButton.classList.remove("flash");
+      }
+
+      // Funzione per aggiornare la visualizzazione delle vite
+      function updateLives() {
+        for (let i = 0; i < 3; i++) {
+          if (i < lives) {
+            lifeElements[i].classList.remove("life-lost");
+          } else {
+            lifeElements[i].classList.add("life-lost");
+          }
+        }
+      }
+
+      // Funzione per verificare la risposta
+      function verificaRisposta() {
+        if (sfidaAttiva && tempoRimanente <= 0) {
+          return;
+        }
+
+        const rispostaUtente = parseInt(rispostaInput.value);
+
+        // Pulisci immediatamente il campo di input
+        rispostaInput.value = "";
+
+        // Disabilita temporaneamente l'input
+        disableInputTemporarily();
+
+        if (rispostaUtente === risultato) {
+          document.getElementById("messaggio").textContent = "Corretto! Bravo!";
+          document.getElementById("messaggio").style.color = "green";
+          playAudio("audioCorretto");
+        } else {
+          lives -= 1; // Rimuove una vita invece di punti
+          updateLives(); // Aggiorna la visualizzazione delle vite
+
+          document.getElementById(
+            "messaggio"
+          ).textContent = `Spiacente, la risposta è sbagliata. La risposta corretta è ${risultato}.`;
+          document.getElementById("messaggio").style.color = "red";
+          playAudio("audioSbagliato");
+        }
+
+        domandeFatte++; // Incrementa il contatore delle domande fatte
+
+        // Controllo se il giocatore ha perso tutte le vite
+        if (lives <= 0) {
+          handleGameOver();
+          return; // Importante: esce dalla funzione per evitare di passare al livello successivo
+        }
+
+        // Controllo se il giocatore è pronto per passare al livello successivo
+        if (domandeFatte >= domandePerLivello * livello) {
+          domandeFatte = 0; // Reset contatore domande
+          if (livello < maxLivello) {
+            livello++;
+            document.getElementById("livello").textContent = livello;
+            document.getElementById(
+              "messaggio"
+            ).textContent = `Passato al livello ${livello}!`;
+            document.getElementById("messaggio").style.color = "blue";
+          } else {
+            document.getElementById("messaggio").textContent =
+              "Hai vinto il gioco!";
+            document.getElementById("messaggio").style.color = "purple";
+            resetGame();
+          }
+        }
+
+        verificaButton.textContent = "Prossima Domanda";
+        clearInterval(timerId);
+        setTimeout(generaDomanda, 1500);
+      }
+
+      // Funzione per commutare gli operandi
+      function commutaOperandi() {
+        // Anche in sfida attiva, il commuta deve funzionare per l'autocommuta
+        isCommutata = !isCommutata;
+        let temp = num1;
+        num1 = num2;
+        num2 = temp;
+        generaBlocchetti(num1, num2);
+        document.getElementById(
+          "domanda"
+        ).textContent = `Quanto fa ${num1} x ${num2}?`;
+
+        // Non resettare l'input quando è una autocommuta
+        if (
+          !autocommuteActive ||
+          (autocommuteActive && document.activeElement !== rispostaInput)
+        ) {
+          rispostaInput.value = "";
+          rispostaInput.focus();
+        }
+
+        document.getElementById("messaggio").textContent = "";
+      }
+
+      // Funzione per resettare il gioco
+      function resetGame() {
+        lives = 3; // Reset vite a 3
+        updateLives(); // Aggiorna visualizzazione vite
+        livello = 1;
+        domandeFatte = 0;
+        isCommutata = false;
+        tempoRimanente = 15;
+
+        document.getElementById("livello").textContent = livello;
+        verificaButton.textContent = "Verifica Risposta";
+        gameOverScreen.style.display = "none";
+
+        // Avvia l'autocommuta
+        startAutocommute();
+
+        clearInterval(intervalloCommutazione);
+        clearInterval(timerId);
+        generaDomanda();
+      }
+
+      function startTimer() {
+        if (timerId) {
+          clearInterval(timerId);
+        }
+        tempoRimanente = 15;
+        widthBarra = 100;
+        tempoBarraInterna.style.width = `${widthBarra}%`;
+        document.getElementById(
+          "messaggio"
+        ).textContent = `Tempo rimanente: ${tempoRimanente} secondi`;
+        timerId = setInterval(() => {
+          tempoRimanente--;
+          widthBarra = (tempoRimanente / 15) * 100;
+          tempoBarraInterna.style.width = `${widthBarra}%`;
+          document.getElementById(
+            "messaggio"
+          ).textContent = `Tempo rimanente: ${tempoRimanente} secondi`;
+          if (tempoRimanente <= 0) {
+            clearInterval(timerId);
+            document.getElementById("messaggio").textContent = "Tempo scaduto!";
+            verificaRisposta();
+          }
+        }, 1000);
+      }
+
+      // Event listener per il pulsante di verifica
+      verificaButton.addEventListener("click", function () {
+        startMusicaWithInteraction();
+        verificaRisposta();
+      });
+
+      // Event listener per il pulsante "Gioca Ancora"
+      giocaAncoraButton.addEventListener("click", function () {
+        gameOverScreen.style.display = "none";
+        // Reset del gioco dopo 2 secondi
+        setTimeout(resetGame, 2000);
+      });
+
+      // Event listener per il pulsante "Commuta"
+      commutaButton.addEventListener("click", function () {
+        startMusicaWithInteraction();
+        commutaOperandi();
+
+        // Reset dell'autocommuta quando l'utente clicca manualmente
+        if (autocommuteActive) {
+          stopAutocommute();
+          startAutocommute();
+        }
+      });
+
+      // Event listener per il pulsante "Reset"
+      resetButton.addEventListener("click", function () {
+        startMusicaWithInteraction();
+        resetGame();
+
+        // Avvia l'autocommuta
+        startAutocommute();
+      });
+
+      // Event listener per il checkbox "Sfida"
+      sfidaSwitch.addEventListener("change", function () {
+        startMusicaWithInteraction();
+        sfidaAttiva = this.checked;
+        if (sfidaAttiva) {
+          startTimer();
+          stopAutocommute(); // Ferma l'autocommuta durante la sfida a tempo
+        } else {
+          clearInterval(timerId);
+          document.getElementById("messaggio").textContent = "";
+          tempoBarra.style.display = "none";
+          startAutocommute(); // Riattiva l'autocommuta quando la sfida è disattivata
+        }
+      });
+
+      // Play button event listener
+      playButton.addEventListener("click", function () {
+        console.log("Play button clicked - attempting to start music");
+        startMusicaWithInteraction();
+        gameArea.style.display = "block";
+        playButton.style.display = "none";
+        resetGame();
+        updateLives(); // Ensure lives are displayed correctly at start
+        startAutocommute(); // Avvia l'autocommuta
+      });
+
+      // Attiva la possibilità di rispondere con Enter
+      rispostaInput.addEventListener("keypress", function (event) {
+        if (event.key === "Enter") {
+          startMusicaWithInteraction();
+          event.preventDefault();
+          verificaRisposta();
+        }
+      });
+
+      // Modifica il gameOver per resettare dopo 2 secondi
+      function handleGameOver() {
+        gameOverScreen.style.display = "flex";
+        clearInterval(intervalloCommutazione);
+        clearInterval(timerId);
+        stopAutocommute();
+
+        // Auto-reset dopo 2 secondi
+        setTimeout(function () {
+          gameOverScreen.style.display = "none";
+          resetGame();
+        }, 2000);
+      }
+
+      // Non avviare automaticamente il gioco
+      // Rimuoviamo la chiamata a generaDomanda e toggleMusica al caricamento
+      window.addEventListener("load", () => {
+        // Non avviare nulla automaticamente
+      });
+
+      // Rimuove le funzioni non usate dal refactoring
+      function startCommutazioneAutomatica() {
+        // Rimpiazzata da startAutocommute
+        console.log(
+          "Funzione startCommutazioneAutomatica deprecata, usare startAutocommute"
+        );
+      }
+
+      function stopCommutazioneAutomatica() {
+        // Rimpiazzata da stopAutocommute
+        console.log(
+          "Funzione stopCommutazioneAutomatica deprecata, usare stopAutocommute"
+        );
+      }
+    </script>
+  </body>
+</html>
