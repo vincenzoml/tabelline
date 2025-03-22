@@ -648,7 +648,7 @@ Utilizzo di pixel art.
       let domandeFatte = 0;
       let domandePerLivello = 2; // Numero di domande per livello
       let intervalloCommutazione;
-      let sfidaAttiva = false;
+      let sfidaAttiva = true; // Ora è attiva per default
       let timerId;
       let tempoRimanente = 15;
       let widthBarra = 100;
@@ -659,6 +659,48 @@ Utilizzo di pixel art.
       let columnAppearDelay = 1000; // Tempo in ms per l'apparizione di ogni colonna (configurabile)
       let rowAppearDelay = 1000; // Tempo in ms per l'apparizione di ogni riga (configurabile)
       let rowAnimationTimerId;
+
+      // Frasi di incoraggiamento per risposte corrette
+      const phrasesFast = [
+        "Velocissimo! ... 5 punti!",
+        "Fantastico, sei stato veloce! ... 5 punti per te!",
+        "Wow, che rapidità! ... 5 punti!",
+        "Che velocità! ... 5 punti!",
+        "Sei un fulmine! ... 5 punti!",
+        "Bravissimo, che velocità! ... 5 punti!",
+        "Sei stato super veloce! ... 5 punti!",
+        "Incredibile velocità! ... 5 punti!",
+        "Sei stato rapidissimo! ... 5 punti!",
+        "Che colpo di genio! ... 5 punti!",
+      ];
+
+      // Frasi per risposte corrette ma più lente
+      const phrasesSlow = [
+        "Ottimo! ... 3 punti!",
+        "Bravissimo! ... 3 punti per te!",
+        "Risposta corretta! ... 3 punti!",
+        "Giusto! ... 3 punti!",
+        "Sei sulla strada giusta! ... 3 punti!",
+        "Perfetto! ... 3 punti!",
+        "Continua così! ... 3 punti!",
+        "Molto bene! ... 3 punti!",
+        "Risposta esatta! ... 3 punti!",
+        "Bravo! ... 3 punti!",
+      ];
+
+      // Frasi per risposte sbagliate
+      const phrasesWrong = [
+        "Peccato! Riprova con la prossima domanda!",
+        "Non è la risposta corretta. Continua a provare!",
+        "Ops! La risposta corretta era diversa.",
+        "Ci sei andato vicino! Riprova!",
+        "Non scoraggiarti, la prossima andrà meglio!",
+        "Ricorda che puoi contare i quadretti!",
+        "Attenzione ai numeri! Riprova!",
+        "Rifletti bene sui numeri!",
+        "Guarda attentamente i quadretti che appaiono!",
+        "Non è corretto, ma stai migliorando!",
+      ];
 
       const gameOverScreen = document.getElementById("gameOver");
       const rispostaInput = document.getElementById("risposta");
@@ -701,6 +743,34 @@ Utilizzo di pixel art.
             });
           }
         }
+      }
+
+      // Funzione per leggere il testo con sintesi vocale
+      function speakText(text, rate = 1.2, onEndCallback = null) {
+        if ("speechSynthesis" in window) {
+          // Cancella eventuali letture precedenti
+          window.speechSynthesis.cancel();
+
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = "it-IT";
+          utterance.rate = rate; // Velocità di lettura leggermente più veloce
+          utterance.pitch = 1.1; // Tono leggermente più alto per bambini
+
+          // Aggiungere variazioni di tono per rendere la voce più naturale
+          // Le pause vengono gestite dal simbolo "..." nelle frasi
+
+          // Se è stato fornito un callback di fine, lo aggiungiamo
+          if (onEndCallback) {
+            utterance.onend = onEndCallback;
+          }
+
+          window.speechSynthesis.speak(utterance);
+          return utterance;
+        }
+
+        // Se la sintesi vocale non è disponibile, esegui subito il callback
+        if (onEndCallback) setTimeout(onEndCallback, 100);
+        return null;
       }
 
       // Funzione per avviare/fermare la musica di sottofondo
@@ -774,21 +844,23 @@ Utilizzo di pixel art.
         // Mostra i blocchetti riga per riga
         showRowByRow(num1, num2);
 
+        // Leggi ad alta voce la domanda con enfasi sul simbolo di moltiplicazione
+        setTimeout(() => {
+          speakText(`${num1} ... per ... ${num2}?`, 1.1);
+        }, 300);
+
         if (musicaAttiva) {
           const musica = document.getElementById("musicaDiSottofondo");
           musica.currentTime = 0;
           musica.play();
         }
-        if (sfidaAttiva) {
-          tempoBarra.style.display = "block";
-          tempoRimanente = 15;
-          widthBarra = 100;
-          tempoBarraInterna.style.width = `${widthBarra}%`;
-          startTimer();
-        } else {
-          tempoBarra.style.display = "none";
-          clearInterval(timerId);
-        }
+
+        // Ora la sfida a tempo è sempre attiva
+        tempoBarra.style.display = "block";
+        tempoRimanente = 15;
+        widthBarra = 100;
+        tempoBarraInterna.style.width = `${widthBarra}%`;
+        startTimer();
       }
 
       // Funzione per mostrare blocchetti riga per riga
@@ -899,34 +971,50 @@ Utilizzo di pixel art.
       }
 
       // Funzione per mostrare il risultato (Si/No) e avviare la nuova domanda
-      function showResultAndProceed(isCorrect) {
+      function showResultAndProceed(isCorrect, phraseToSpeak) {
         // Nascondi domanda e blocchetti
         blocchettiContainer.style.opacity = "0";
         operationDisplay.style.opacity = "0";
         document.getElementById("messaggio").style.fontSize = "3rem";
         document.getElementById("messaggio").style.transition = "all 0.5s ease";
 
-        // Mostra Si o No
+        // Mostra Si o No al posto dei blocchetti colorati
         if (isCorrect) {
-          document.getElementById("messaggio").textContent = "Sì";
+          blocchettiContainer.style.opacity = "1";
+          blocchettiContainer.innerHTML =
+            "<div style='font-size: 5rem; color: green;'>SÌ</div>";
+          document.getElementById("messaggio").textContent = "";
           document.getElementById("messaggio").style.color = "green";
+
+          // Leggi la frase di incoraggiamento e procedi solo quando ha finito
+          speakText(phraseToSpeak, 1.2, () => {
+            setTimeout(() => procedeToNextQuestion(), 300);
+          });
         } else {
-          document.getElementById("messaggio").textContent = "No";
+          blocchettiContainer.style.opacity = "1";
+          blocchettiContainer.innerHTML =
+            "<div style='font-size: 5rem; color: red;'>NO</div>";
+          document.getElementById("messaggio").textContent = "";
           document.getElementById("messaggio").style.color = "red";
+
+          // Leggi la frase di errore e procedi solo quando ha finito
+          speakText(phraseToSpeak, 1.2, () => {
+            setTimeout(() => procedeToNextQuestion(), 300);
+          });
         }
+      }
 
-        // Dopo 1 secondo, nascondi il risultato e mostra la nuova domanda
+      function procedeToNextQuestion() {
+        // Prima fase: nascondi il messaggio
+        document.getElementById("messaggio").style.opacity = "0";
+
+        // Dopo che il messaggio è scomparso, cambia domanda e mostra tutto
         setTimeout(() => {
-          document.getElementById("messaggio").style.opacity = "0";
-
-          // Dopo che il messaggio è scomparso, cambia domanda e mostra tutto
-          setTimeout(() => {
-            document.getElementById("messaggio").style.fontSize = "1.2rem";
-            document.getElementById("messaggio").style.opacity = "1";
-            operationDisplay.style.opacity = "1";
-            generaDomanda();
-          }, 500);
-        }, 1000);
+          document.getElementById("messaggio").style.fontSize = "1.2rem";
+          document.getElementById("messaggio").style.opacity = "1";
+          operationDisplay.style.opacity = "1";
+          generaDomanda();
+        }, 500);
       }
 
       // Funzione per verificare la risposta
@@ -970,15 +1058,24 @@ Utilizzo di pixel art.
             punteggioValue.classList.remove("points-added");
           }, 600);
 
-          // Mostra Sì e procedi
-          showResultAndProceed(true);
+          // Seleziona una frase di incoraggiamento a caso
+          const phrases = pointsEarned === 5 ? phrasesFast : phrasesSlow;
+          const randomIndex = Math.floor(Math.random() * phrases.length);
+          const phraseToSpeak = phrases[randomIndex];
+
+          // Mostra Sì e procedi con la frase
+          showResultAndProceed(true, phraseToSpeak);
           playAudio("audioCorretto");
         } else {
           lives -= 1; // Rimuove una vita invece di punti
           updateLives(); // Aggiorna la visualizzazione delle vite
 
-          // Mostra No e procedi
-          showResultAndProceed(false);
+          // Seleziona una frase di errore a caso
+          const randomIndex = Math.floor(Math.random() * phrasesWrong.length);
+          const phraseToSpeak = phrasesWrong[randomIndex];
+
+          // Mostra No e procedi con la frase
+          showResultAndProceed(false, phraseToSpeak);
           playAudio("audioSbagliato");
         }
 
@@ -1015,6 +1112,9 @@ Utilizzo di pixel art.
 
         // Aggiorna la visualizzazione
         operationDisplay.textContent = `${num1} × ${num2}`;
+
+        // Leggi ad alta voce la nuova operazione con intonazione più naturale
+        speakText(`${num1} ... per ... ${num2}?`, 1.0);
 
         // Nascondi blocchetti esistenti
         blocchettiContainer.style.opacity = "0";
@@ -1068,16 +1168,15 @@ Utilizzo di pixel art.
         tempoRimanente = 15;
         widthBarra = 100;
         tempoBarraInterna.style.width = `${widthBarra}%`;
-        document.getElementById(
-          "messaggio"
-        ).textContent = `Tempo rimanente: ${tempoRimanente} secondi`;
+        // Rimosso il testo del countdown
+        document.getElementById("messaggio").textContent = "";
+
         timerId = setInterval(() => {
           tempoRimanente--;
           widthBarra = (tempoRimanente / 15) * 100;
           tempoBarraInterna.style.width = `${widthBarra}%`;
-          document.getElementById(
-            "messaggio"
-          ).textContent = `Tempo rimanente: ${tempoRimanente} secondi`;
+          // Rimosso l'aggiornamento del testo del countdown
+
           if (tempoRimanente <= 0) {
             clearInterval(timerId);
             document.getElementById("messaggio").textContent = "Tempo scaduto!";
